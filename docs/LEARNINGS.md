@@ -4591,3 +4591,9 @@ SUPERSEDED: 2026-11-06 改为 Core/Optional 内的 source 1 随机贴图标记�
 - Notes / 说明: 7 个内联 `sprite_outline` 副本迁移后普通敌人生效；Goliath / 侵蚀塔的 `Graphics` 走 screen-space 描边 shader，glitch 参数不存在，因此改为「CanvasGroup 材质无 glitch uniform 时退化为逐子节点材质」：goliath 14 个可见部件、erosion 7 个 Sprite2D 切片（逐节点 + 帧矩形，允许撕裂）；坦克同 texture 的 38 层切片仍共享材质、关闭撕裂，turret 逐节点。代价是 Boss 为逐部件独立故障，且每命中写入次数随部件数增加（实测 goliath ~39µs、erosion ~14µs）。
 - Source / 来源: code + test
 - Date / 日期: 2026-11-14
+
+### [Build/CI] Web 导出依赖 dlink-nothreads 模板，且 CI 中须剥离被 gitignore 的 godot_ai 引用
+- Evidence / 证据: `export_presets.cfg`（`[preset.4] name="Web"`：`variant/extensions_support=true`、`variant/thread_support=false`）；`addons/godot-rapier2d/godot-rapier2d.gdextension:39-40`（`web.*.wasm32` → `bin/wasm-nothreads/godot_rapier.wasm`）；`project.godot:39`（`_mcp_game_helper` autoload）与 `project.godot:67`（`editor_plugins`）指向 `.gitignore` 排除的 `addons/godot_ai/`；`.github/workflows/pages.yml`
+- Notes / 说明: ① rapier2d 是 GDExtension，Web 必须用支持扩展的 `web_dlink_*` 模板；选 nothreads 是为了 GitHub Pages 无法设置 COOP/COEP 头（多线程版需要 SharedArrayBuffer）。② `project.godot` 中的 godot_ai 引用属本地工具状态（见 AGENTS.md），仓库内不改；CI 在导出前用 `sed` 临时删除，否则 clean checkout 下 autoload 缺文件。③ `project.godot` 设 `rendering_method.web="forward_plus"`，浏览器只支持 Compatibility，运行时会降级，画面可能与桌面不同。④ `index.pck` 约 225MB（本地 debug 导出实测），GitHub Pages 站点上限 1GB，资源继续增长需关注。⑤ 本地 headless 导出会让 4.7.2 importer 给大量 `.import` 补新默认字段（纯噪音），提交前别误带。
+- Source / 来源: code + test
+- Date / 日期: 2026-11-17
